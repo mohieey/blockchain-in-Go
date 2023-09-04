@@ -3,6 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -19,12 +20,19 @@ func (b *Block) SetHash() {
 	b.Hash = hash[:]
 }
 
-func NewBlock(data string, prevBlockHash []byte) *Block {
+func (b *Block) Print() {
+	fmt.Printf("Prev. hash: %x\n", b.PrevBlockHash)
+	fmt.Printf("Data: %s\n", b.Data)
+	fmt.Printf("Hash: %x\n", b.Hash)
+	fmt.Println()
+}
+
+func newBlock(data string, prevBlockHash []byte) *Block {
 	block := &Block{Headers: Headers{Timestamp: time.Now().Unix(), PrevBlockHash: prevBlockHash, Hash: []byte{}}, Data: []byte(data)}
 	block.SetHash()
 	return block
 }
 
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte{})
+func newGenesisBlock() *Block {
+	return newBlock("Genesis Block", []byte{})
 }
