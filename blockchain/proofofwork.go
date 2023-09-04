@@ -53,11 +53,23 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	return nonce, hash[:]
 }
 
+func (pow *ProofOfWork) Validate() bool {
+	var hashInt big.Int
+
+	data := pow.prepareData(pow.block.Nonce)
+	hash := sha256.Sum256(data)
+	hashInt.SetBytes(hash[:])
+
+	isValid := hashInt.Cmp(pow.target) == -1
+
+	return isValid
+}
+
 func NewProofOfWork(b *Block) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
 
-	pow := &ProofOfWork{b, target}
+	pow := &ProofOfWork{block: b, target: target}
 
 	return pow
 }
