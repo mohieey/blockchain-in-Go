@@ -2,6 +2,8 @@ package blockchain
 
 import "fmt"
 
+const targetBits = 24
+
 type BlockChain struct {
 	blocksArray []*Block
 	blocksMap   map[string]*Block
