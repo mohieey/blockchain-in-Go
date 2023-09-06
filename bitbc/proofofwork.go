@@ -1,4 +1,4 @@
-package blockchain
+package bitbc
 
 import (
 	"bytes"
@@ -41,12 +41,12 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		hash = sha256.Sum256(data)
 		fmt.Printf("\r%x", hash)
 		hashInt.SetBytes(hash[:])
-
-		if hashInt.Cmp(pow.target) == -1 {
-			break
-		} else {
-			nonce++
-		}
+		break
+		// if hashInt.Cmp(pow.target) == -1 {
+		// 	break
+		// } else {
+		// 	nonce++
+		// }
 	}
 	fmt.Print("\n\n")
 

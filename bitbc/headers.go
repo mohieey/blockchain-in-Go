@@ -1,4 +1,4 @@
-package blockchain
+package bitbc
 
 type Headers struct {
 	Timestamp     int64

@@ -1,13 +1,28 @@
-package blockchain
+package bitbc
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"log"
 	"time"
 )
 
 type Block struct {
 	Headers
 	Data []byte
+}
+
+func (b *Block) Serialize() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+
+	err := encoder.Encode(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return result.Bytes()
 }
 
 func (b *Block) Print() {
