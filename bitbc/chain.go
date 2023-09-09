@@ -9,13 +9,14 @@ import (
 const targetBits = 24
 const dbFile = "blockchain.db"
 const blocksBucket = "blocks"
+const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
 type BlockChain struct {
 	tip []byte
 	Db  *bolt.DB
 }
 
-func (bc *BlockChain) AddBlock(data string) string {
+func (bc *BlockChain) AddBlock(transactions []*Transaction) string {
 	var lastHash []byte
 
 	bc.Db.View(func(tx *bolt.Tx) error {
@@ -25,7 +26,7 @@ func (bc *BlockChain) AddBlock(data string) string {
 		return nil
 	})
 
-	newBlock := newBlock(data, lastHash)
+	newBlock := newBlock(transactions, lastHash)
 
 	bc.Db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
@@ -51,7 +52,7 @@ func (bc *BlockChain) Print() {
 
 	for block != nil {
 		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.Data)
+		// fmt.Printf("Data: %s\n", block.Data)
 		fmt.Printf("Hash: %x\n", block.Hash)
 		fmt.Println()
 		block = bci.Next()
@@ -59,7 +60,7 @@ func (bc *BlockChain) Print() {
 
 }
 
-func NewBlockchain() *BlockChain {
+func NewBlockchain(address string) *BlockChain {
 	var tip []byte
 	db, _ := bolt.Open(dbFile, 0600, nil)
 
@@ -67,7 +68,9 @@ func NewBlockchain() *BlockChain {
 		b := tx.Bucket([]byte(blocksBucket))
 
 		if b == nil {
-			genesis := newGenesisBlock()
+			cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
+			genesis := newGenesisBlock(cbtx)
+
 			b, _ := tx.CreateBucket([]byte(blocksBucket))
 			b.Put(genesis.Hash, genesis.Serialize())
 			b.Put([]byte("l"), genesis.Hash)

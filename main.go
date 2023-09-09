@@ -5,10 +5,8 @@ import (
 )
 
 func main() {
-	bc := bitbc.NewBlockchain()
-	defer bc.Db.Close()
 
-	cli := bitbc.CLI{BC: bc}
+	cli := bitbc.CLI{}
 	cli.Run()
 
 }

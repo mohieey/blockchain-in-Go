@@ -2,6 +2,7 @@ package bitbc
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -10,7 +11,7 @@ import (
 
 type Block struct {
 	Headers
-	Data []byte
+	Transactions []*Transaction
 }
 
 func (b *Block) Serialize() []byte {
@@ -25,15 +26,26 @@ func (b *Block) Serialize() []byte {
 	return result.Bytes()
 }
 
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
+}
+
 func (b *Block) Print() {
 	fmt.Printf("Prev. hash: %x\n", b.PrevBlockHash)
-	fmt.Printf("Data: %s\n", b.Data)
 	fmt.Printf("Hash: %x\n", b.Hash)
 	fmt.Println()
 }
 
-func newBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{Headers: Headers{Timestamp: time.Now().Unix(), PrevBlockHash: prevBlockHash, Hash: []byte{}}, Data: []byte(data)}
+func newBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{Headers: Headers{Timestamp: time.Now().Unix(), PrevBlockHash: prevBlockHash, Hash: []byte{}}, Transactions: transactions}
 	pow := NewProofOfWork(block)
 
 	nonce, hash := pow.Run()
@@ -43,6 +55,6 @@ func newBlock(data string, prevBlockHash []byte) *Block {
 	return block
 }
 
-func newGenesisBlock() *Block {
-	return newBlock("Genesis Block", []byte{})
+func newGenesisBlock(coinbase *Transaction) *Block {
+	return newBlock([]*Transaction{coinbase}, []byte{})
 }

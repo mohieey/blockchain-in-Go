@@ -3,17 +3,19 @@ package bitbc
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
 type CLI struct {
-	BC *BlockChain
 }
 
 func (cli *CLI) printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  addblock -data BLOCK_DATA - add a block to the bitbc")
-	fmt.Println("  printchain - print all the blocks of the bitbc")
+	fmt.Println("  getbalance -address ADDRESS - Get balance of ADDRESS")
+	fmt.Println("  createblockchain -address ADDRESS - Create a blockchain and send genesis block reward to ADDRESS")
+	fmt.Println("  printchain - Print all the blocks of the blockchain")
+	fmt.Println("  send -from FROM -to TO -amount AMOUNT - Send AMOUNT of coins from FROM address to TO")
 }
 
 func (cli *CLI) validateArgs() {
@@ -23,24 +25,53 @@ func (cli *CLI) validateArgs() {
 	}
 }
 
+func (cli *CLI) createBlockchain(address string) {
+	bc := NewBlockchain(address)
+	bc.Db.Close()
+	fmt.Println("Done!")
+}
+
+// func (cli *CLI) getBalance(address string) {
+// 	bc := NewBlockchain(address)
+// 	defer bc.db.Close()
+
+// 	balance := 0
+// 	UTXOs := bc.FindUTXO(address)
+
+// 	for _, out := range UTXOs {
+// 		balance += out.Value
+// 	}
+
+// 	fmt.Printf("Balance of '%s': %d\n", address, balance)
+// }
+
 func (cli *CLI) addBlock(data string) {
-	cli.BC.AddBlock(data)
+	// cli.BC.AddBlock(data)
 	fmt.Println("Success!")
 }
 
 func (cli *CLI) printChain() {
-	cli.BC.Print()
+	bc := NewBlockchain("")
+	defer bc.Db.Close()
+	bc.Print()
 }
 
 func (cli *CLI) Run() {
 	cli.validateArgs()
 
 	addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
+	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 
 	addBlockData := addBlockCmd.String("data", "", "Block data")
+	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
 
 	switch os.Args[1] {
+	case "createblockchain":
+		err := createBlockchainCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 	case "addblock":
 		addBlockCmd.Parse(os.Args[2:])
 	case "printchain":
@@ -48,6 +79,14 @@ func (cli *CLI) Run() {
 	default:
 		cli.printUsage()
 		os.Exit(1)
+	}
+
+	if createBlockchainCmd.Parsed() {
+		if *createBlockchainAddress == "" {
+			createBlockchainCmd.Usage()
+			os.Exit(1)
+		}
+		cli.createBlockchain(*createBlockchainAddress)
 	}
 
 	if addBlockCmd.Parsed() {
