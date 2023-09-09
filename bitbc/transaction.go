@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"log"
 )
@@ -65,6 +66,38 @@ func NewCoinbaseTX(to, data string) *Transaction {
 		ScriptSig: data}
 	txout := TXOutput{Value: subsidy, ScriptPubKey: to}
 	tx := Transaction{ID: nil, Vin: []TXInput{txin}, Vout: []TXOutput{txout}}
+	tx.SetID()
+
+	return &tx
+}
+
+func NewUTXOTransaction(from, to string, amount int, bc *BlockChain) *Transaction {
+	var inputs []TXInput
+	var outputs []TXOutput
+
+	acc, validOutputs := bc.FindSpendableOutputs(from, amount)
+
+	if acc < amount {
+		log.Fatal("ERROR: Not enough funds")
+	}
+
+	// Build a list of inputs
+	for txid, outs := range validOutputs {
+		txID, _ := hex.DecodeString(txid)
+
+		for _, out := range outs {
+			input := TXInput{txID, out, from}
+			inputs = append(inputs, input)
+		}
+	}
+
+	// Build a list of outputs
+	outputs = append(outputs, TXOutput{amount, to})
+	if acc > amount {
+		outputs = append(outputs, TXOutput{acc - amount, from}) // a change
+	}
+
+	tx := Transaction{nil, inputs, outputs}
 	tx.SetID()
 
 	return &tx

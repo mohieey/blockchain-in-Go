@@ -17,7 +17,7 @@ type BlockChain struct {
 	Db  *bolt.DB
 }
 
-func (bc *BlockChain) AddBlock(transactions []*Transaction) string {
+func (bc *BlockChain) MineBlock(transactions []*Transaction) string {
 	var lastHash []byte
 
 	bc.Db.View(func(tx *bolt.Tx) error {
@@ -104,6 +104,30 @@ func (bc *BlockChain) FindUnspentTransactions(address string) []Transaction {
 	}
 
 	return unspentTXs
+}
+
+func (bc *BlockChain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+	unspentOutputs := make(map[string][]int)
+	unspentTXs := bc.FindUnspentTransactions(address)
+	accumulated := 0
+
+Work:
+	for _, tx := range unspentTXs {
+		txID := hex.EncodeToString(tx.ID)
+
+		for outIdx, out := range tx.Vout {
+			if out.CanBeUnlockedWith(address) && accumulated < amount {
+				accumulated += out.Value
+				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+
+				if accumulated >= amount {
+					break Work
+				}
+			}
+		}
+	}
+
+	return accumulated, unspentOutputs
 }
 
 func (bc *BlockChain) FindUTXO(address string) []TXOutput {
